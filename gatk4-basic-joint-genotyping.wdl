@@ -120,13 +120,13 @@ task IndexFile {
   Int machine_mem_gb = select_first([mem_gb, 7])
   Int command_mem_gb = machine_mem_gb - 1
 
-  String output_index = input_file + output_suffix
+  String index_name = input_file + output_suffix
 
   command {
     ~{gatk_path} --java-options "-Xmx~{command_mem_gb}G ~{java_opt}" \
       IndexFeatureFile \
       -I ~{input_file} \
-      -O ~{output_index}
+      -O ~{index_name}
   }
   runtime {
     docker: docker
@@ -135,7 +135,7 @@ task IndexFile {
     preemptible: select_first([preemptible_attempts, 3])
   }
   output {
-    File output_index = "~{output_index}"
+    File output_index = "~{index_name}"
   }
 
 }
@@ -143,47 +143,59 @@ task IndexFile {
 task ImportGVCFs {
 
   input {
-    Array[File] input_vcfs
-    Array[File] input_vcfs_indices
-    File interval
+    Array[File] input_gvcfs
+    Array[File] input_gvcf_indices
+    String interval
+    String workspace_dir_name
+
     File ref_fasta
     File ref_fasta_index
     File ref_dict
 
-    String workspace_dir_name
+    # Environment parameters
+    String gatk_path
+    String docker
 
-    Int disk_size
-    Int batch_size
-
-    # Using a nightly version of GATK containing fixes for GenomicsDB
-    # https://github.com/broadinstitute/gatk/pull/5899
-    String gatk_docker = "us.gcr.io/broad-gotc-prod/gatk-nightly:2019-05-07-4.1.2.0-5-g53d015e4f-NIGHTLY-SNAPSHOT"
+    # Resourcing parameters
+    String? java_opt
+    Int? mem_gb
+    Int? disk_space_gb
+    Boolean use_ssd = false
+    Int? preemptible_attempts
   }
+
+  Int machine_mem_gb = select_first([mem_gb, 15])
+  Int command_mem_gb = machine_mem_gb - 3
+
+  String tarred_workspace_name = workspace_dir_name + ".tar"
 
   command <<<
     set -euo pipefail
 
     rm -rf ~{workspace_dir_name}
 
-    gatk --java-options -Xms8g \
+    ~{gatk_path} --java-options "-Xmx~{command_mem_gb}G ~{java_opt}" \
       GenomicsDBImport \
       -V ~{sep=' -V' gvcfs}
       -L ~{interval} \
       --genomicsdb-workspace-path ~{workspace_dir_name} \
-      --batch-size ~{batch_size} \
+      --batch-size 50 \
       --reader-threads 5 \
       --merge-input-intervals \
       --consolidate
 
-    tar -cf ~{workspace_dir_name}.tar ~{workspace_dir_name}
+    tar -cf ~{tarred_workspace_name} ~{workspace_dir_name}
   >>>
 
   runtime {
-
+    docker: docker
+    memory: machine_mem_gb + " GB"
+    disks: "local-disk " + select_first([disk_space_gb, 100]) + if use_ssd then " SSD" else " HDD"
+    preemptible: select_first([preemptible_attempts, 3])
   }
 
   output {
-    File output_genomicsdb = "~{workspace_dir_name}.tar"
+    File output_genomicsdb = "~{tarred_workspace_name}"
   }
 }
 
