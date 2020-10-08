@@ -1,0 +1,21 @@
+{
+	"name": "Java",
+	"build": {
+		"dockerfile": "DOCKERFILE",
+		"args": {
+			// Update the VARIANT arg to pick a Java version >= 11
+			"VARIANT": "11"
+		}
+	},
+
+	"settings": { 
+		"terminal.integrated.shell.linux": "/bin/bash",
+		"java.home": "/docker-java-home"
+	},
+	
+	"extensions": [
+		"broadinstitute.wdl-devtools",
+		"broadinstitute.wdl"
+	]
+
+}
