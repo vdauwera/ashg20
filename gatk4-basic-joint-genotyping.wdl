@@ -172,6 +172,17 @@ task ImportGVCFs {
     Int? preemptible_attempts
   }
 
+  parameter_meta {
+    input_gvcfs: {
+      description: "an GVCF file used as input",
+      localization_optional: true
+    }
+    input_gvcf_indices: {
+      description: "an index file for a GVCF file used as input",
+      localization_optional: true
+    }
+  }
+
   Int machine_mem_gb = select_first([mem_gb, 15])
   Int command_mem_gb = machine_mem_gb - 3
 
