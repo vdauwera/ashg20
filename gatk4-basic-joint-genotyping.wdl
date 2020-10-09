@@ -221,7 +221,7 @@ task GenotypeGVCFs {
 
   input {
     File workspace_tar
-    File interval
+    String interval
 
     String output_vcf_filename
     String output_index_suffix
