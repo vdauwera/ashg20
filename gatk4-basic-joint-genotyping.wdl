@@ -42,9 +42,6 @@ workflow BasicJointGenotyping {
     File ref_fasta_index
     File ref_dict
 
-    File dbsnp_vcf
-    File dbsnp_vcf_index
-
     String gatk_path = "/gatk/gatk"
     String gatk_docker = "broadinstitute/gatk:4.1.8.1"
   }
@@ -86,8 +83,6 @@ workflow BasicJointGenotyping {
         ref_fasta = ref_fasta,
         ref_fasta_index = ref_fasta_index,
         ref_dict = ref_dict,
-        dbsnp_vcf = dbsnp_vcf,
-        dbsnp_vcf_index = dbsnp_vcf_index,
         gatk_path = gatk_path,
         docker = gatk_docker
     }
@@ -99,6 +94,9 @@ workflow BasicJointGenotyping {
       input_vcf_indices = GenotypeGVCFs.output_vcf_index,
       merged_vcf_filename = callset_name + ".vcf.gz",
       output_index_suffix = ".tbi",
+      ref_fasta = ref_fasta,
+      ref_fasta_index = ref_fasta_index,
+      ref_dict = ref_dict,
       gatk_path = gatk_path,
       docker = gatk_docker
   }
@@ -220,9 +218,6 @@ task GenotypeGVCFs {
     File ref_fasta_index
     File ref_dict
 
-    String dbsnp_vcf
-    String dbsnp_vcf_index
-
     # Environment parameters
     String gatk_path
     String docker
@@ -250,7 +245,6 @@ task GenotypeGVCFs {
       -V gendb://$WORKSPACE \
       -L ~{interval} \
       -O ~{output_vcf_filename} \
-      -D ~{dbsnp_vcf} \
       -G StandardAnnotation -G AS_StandardAnnotation \
       --merge-input-intervals
   >>>
