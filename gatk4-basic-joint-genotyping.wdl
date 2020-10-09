@@ -182,7 +182,7 @@ task ImportGVCFs {
 
     ~{gatk_path} --java-options "-Xmx~{command_mem_gb}G ~{java_opt}" \
       GenomicsDBImport \
-      -V ~{sep=' -V' input_gvcfs} \
+      -V ~{sep=' -V ' input_gvcfs} \
       -L ~{interval} \
       --genomicsdb-workspace-path ~{workspace_dir_name} \
       --batch-size 50 \
