@@ -16,7 +16,7 @@ version 1.0
 ##   without any filtering applied after calling.
 ##
 ## Cromwell version support 
-## - Pending testing
+## - Successfully tested with 53.1 
 ##
 ## Runtime parameters may be optimized for Broad's Google Cloud Platform implementation. 
 ## For program versions, see docker containers. 
@@ -42,9 +42,6 @@ workflow BasicJointGenotyping {
     File ref_fasta_index
     File ref_dict
 
-    File dbsnp_vcf
-    File dbsnp_vcf_index
-
     String gatk_path = "/gatk/gatk"
     String gatk_docker = "broadinstitute/gatk:4.1.8.1"
   }
@@ -60,7 +57,9 @@ workflow BasicJointGenotyping {
     }
   }
 
-  scatter (interval in intervals_list) {
+  Array[String] calling_intervals = read_lines(interval_list)
+
+  scatter (interval in calling_intervals) {
 
     call ImportGVCFs {
       input:
@@ -77,15 +76,13 @@ workflow BasicJointGenotyping {
 
     call GenotypeGVCFs {
       input:
-        workspace_tar = ImportGVCFs.output_workspace
+        workspace_tar = ImportGVCFs.output_workspace,
         interval = interval,
         output_vcf_filename = callset_name + "_scatter.vcf.gz",
         output_index_suffix = ".tbi",
         ref_fasta = ref_fasta,
         ref_fasta_index = ref_fasta_index,
         ref_dict = ref_dict,
-        dbsnp_vcf = dbsnp_vcf,
-        dbsnp_vcf_index = dbsnp_vcf_index,
         gatk_path = gatk_path,
         docker = gatk_docker
     }
@@ -95,8 +92,11 @@ workflow BasicJointGenotyping {
     input:
       input_vcfs = GenotypeGVCFs.output_vcf,
       input_vcf_indices = GenotypeGVCFs.output_vcf_index,
-      merged_vcf_name = callset_name + ".vcf.gz",
+      merged_vcf_filename = callset_name + ".vcf.gz",
       output_index_suffix = ".tbi",
+      ref_fasta = ref_fasta,
+      ref_fasta_index = ref_fasta_index,
+      ref_dict = ref_dict,
       gatk_path = gatk_path,
       docker = gatk_docker
   }
@@ -201,7 +201,7 @@ task ImportGVCFs {
   }
 
   output {
-    File output_genomicsdb = "~{tarred_workspace_name}"
+    File output_workspace = "~{tarred_workspace_name}"
   }
 }
 
@@ -217,8 +217,6 @@ task GenotypeGVCFs {
     File ref_fasta
     File ref_fasta_index
     File ref_dict
-
-    String dbsnp_vcf
 
     # Environment parameters
     String gatk_path
@@ -247,7 +245,6 @@ task GenotypeGVCFs {
       -V gendb://$WORKSPACE \
       -L ~{interval} \
       -O ~{output_vcf_filename} \
-      -D ~{dbsnp_vcf} \
       -G StandardAnnotation -G AS_StandardAnnotation \
       --merge-input-intervals
   >>>
@@ -265,7 +262,7 @@ task GenotypeGVCFs {
   }
 }
 
-task MergeGVCFs {
+task MergeVCFs {
 
   input {
     Array[File] input_vcfs
