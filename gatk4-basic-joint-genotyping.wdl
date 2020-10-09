@@ -304,7 +304,7 @@ task MergeVCFs {
 
   command {
     ~{gatk_path} --java-options "-Xmx~{command_mem_gb}G ~{java_opt}" \
-      MergeVCFs \
+      MergeVcfs \
       -I ~{sep=' -I' input_vcfs} \
       -O ~{merged_vcf_filename}
   }
