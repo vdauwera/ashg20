@@ -124,7 +124,7 @@ task IndexFile {
   Int machine_mem_gb = select_first([mem_gb, 7])
   Int command_mem_gb = machine_mem_gb - 1
 
-  String index_name = input_file + output_suffix
+  String index_name = basename(input_file) + output_suffix
 
   command {
     ~{gatk_path} --java-options "-Xmx~{command_mem_gb}G ~{java_opt}" \
