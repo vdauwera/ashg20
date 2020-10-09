@@ -63,7 +63,7 @@ workflow BasicJointGenotyping {
 
     call ImportGVCFs {
       input:
-        input_gvcfs = RenameAndIndexFile.input_gvcf_copy,
+        input_gvcfs = RenameAndIndexFile.renamed_input,
         input_gvcf_indices = RenameAndIndexFile.output_index,
         workspace_dir_name = "genomicsdb",
         interval = interval,
@@ -145,7 +145,7 @@ task RenameAndIndexFile {
   }
 
   output {
-    File input_gvcf_copy = "~{input_file}" # To make this wf robust to DRS streaming issue without resolving URIs manually
+    File renamed_input = "~{new_name}" # To make this wf robust to DRS streaming issue without resolving URIs manually
     File output_index = "~{index_name}"
   }
 
