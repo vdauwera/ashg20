@@ -1,0 +1,8 @@
+{
+  "BasicJointGenotyping.input_gvcfs": ["test-data/mother.g.vcf.gz","test-data/father.g.vcf.gz","test-data/son.g.vcf.gz"],
+  "BasicJointGenotyping.ref_fasta": "gs://genomics-in-the-cloud/v1/data/germline/ref/ref.fasta",
+  "BasicJointGenotyping.ref_fasta_index": "gs://genomics-in-the-cloud/v1/data/germline/ref/ref.fasta.fai",
+  "BasicJointGenotyping.ref_dict": "gs://genomics-in-the-cloud/v1/data/germline/ref/ref.dict",
+  "BasicJointGenotyping.interval_list": "gs://genomics-in-the-cloud/v1/data/germline/intervals/snippet-intervals-min.list",
+  "BasicJointGenotyping.callset_git name": "FamilyTrio"
+}
