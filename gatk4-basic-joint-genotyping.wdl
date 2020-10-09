@@ -79,9 +79,13 @@ workflow BasicJointGenotyping {
       input:
         workspace_tar = ImportGVCFs.output_workspace
         interval = interval,
+        output_vcf_filename = callset_name + "_scatter.vcf.gz",
+        output_index_suffix = ".tbi",
         ref_fasta = ref_fasta,
         ref_fasta_index = ref_fasta_index,
         ref_dict = ref_dict,
+        dbsnp_vcf = dbsnp_vcf,
+        dbsnp_vcf_index = dbsnp_vcf_index,
         gatk_path = gatk_path,
         docker = gatk_docker
     }
@@ -92,7 +96,7 @@ workflow BasicJointGenotyping {
       input_vcfs = GenotypeGVCFs.output_vcf,
       input_vcf_indices = GenotypeGVCFs.output_vcf_index,
       merged_vcf_name = callset_name + ".vcf.gz",
-      merged_vcf_index_name = callset_name + ".vcf.gz.tbi",
+      output_index_suffix = ".tbi",
       gatk_path = gatk_path,
       docker = gatk_docker
   }
@@ -128,12 +132,14 @@ task IndexFile {
       -I ~{input_file} \
       -O ~{index_name}
   }
+
   runtime {
     docker: docker
     memory: machine_mem_gb + " GB"
     disks: "local-disk " + select_first([disk_space_gb, 100]) + if use_ssd then " SSD" else " HDD"
     preemptible: select_first([preemptible_attempts, 3])
   }
+
   output {
     File output_index = "~{index_name}"
   }
@@ -176,7 +182,7 @@ task ImportGVCFs {
 
     ~{gatk_path} --java-options "-Xmx~{command_mem_gb}G ~{java_opt}" \
       GenomicsDBImport \
-      -V ~{sep=' -V' gvcfs}
+      -V ~{sep=' -V' input_gvcfs} \
       -L ~{interval} \
       --genomicsdb-workspace-path ~{workspace_dir_name} \
       --batch-size 50 \
@@ -206,6 +212,7 @@ task GenotypeGVCFs {
     File interval
 
     String output_vcf_filename
+    String output_index_suffix
 
     File ref_fasta
     File ref_fasta_index
@@ -213,7 +220,20 @@ task GenotypeGVCFs {
 
     String dbsnp_vcf
 
+    # Environment parameters
+    String gatk_path
+    String docker
+
+    # Resourcing parameters
+    String? java_opt
+    Int? mem_gb
+    Int? disk_space_gb
+    Boolean use_ssd = false
+    Int? preemptible_attempts
   }
+
+  Int machine_mem_gb = select_first([mem_gb, 7])
+  Int command_mem_gb = machine_mem_gb - 1
 
   command <<<
     set -euo pipefail
@@ -221,7 +241,7 @@ task GenotypeGVCFs {
     tar -xf ~{workspace_tar}
     WORKSPACE=$(basename ~{workspace_tar} .tar)
 
-    gatk --java-options -Xms8g \
+    ~{gatk_path} --java-options "-Xmx~{command_mem_gb}G ~{java_opt}" \
       GenotypeGVCFs \
       -R ~{ref_fasta} \
       -V gendb://$WORKSPACE \
@@ -233,11 +253,63 @@ task GenotypeGVCFs {
   >>>
 
   runtime {
-
+    docker: docker
+    memory: machine_mem_gb + " GB"
+    disks: "local-disk " + select_first([disk_space_gb, 100]) + if use_ssd then " SSD" else " HDD"
+    preemptible: select_first([preemptible_attempts, 3])
   }
 
   output {
     File output_vcf = "~{output_vcf_filename}"
-    File output_vcf_index = "~{output_vcf_filename}.tbi"
+    File output_vcf_index = "~{output_vcf_filename + output_index_suffix}"
   }
+}
+
+task MergeGVCFs {
+
+  input {
+    Array[File] input_vcfs
+    Array[File] input_vcf_indices
+
+    String merged_vcf_filename
+    String output_index_suffix
+
+    File ref_fasta
+    File ref_fasta_index
+    File ref_dict
+
+    # Environment parameters
+    String gatk_path
+    String docker
+
+    # Resourcing parameters
+    String? java_opt
+    Int? mem_gb
+    Int? disk_space_gb
+    Boolean use_ssd = false
+    Int? preemptible_attempts
+  }
+
+  Int machine_mem_gb = select_first([mem_gb, 7])
+  Int command_mem_gb = machine_mem_gb - 1
+
+  command {
+    ~{gatk_path} --java-options "-Xmx~{command_mem_gb}G ~{java_opt}" \
+      MergeVCFs \
+      -I ~{sep=' -I' input_vcfs} \
+      -O ~{merged_vcf_filename}
+  }
+
+  runtime {
+    docker: docker
+    memory: machine_mem_gb + " GB"
+    disks: "local-disk " + select_first([disk_space_gb, 100]) + if use_ssd then " SSD" else " HDD"
+    preemptible: select_first([preemptible_attempts, 3])
+  }
+
+  output {
+    File output_vcf = "~{merged_vcf_filename}"
+    File output_vcf_index = "~{merged_vcf_filename + output_index_suffix}"
+  }
+
 }
