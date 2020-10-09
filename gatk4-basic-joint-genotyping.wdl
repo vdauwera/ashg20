@@ -124,8 +124,7 @@ task IndexFile {
   Int machine_mem_gb = select_first([mem_gb, 7])
   Int command_mem_gb = machine_mem_gb - 1
 
-  String input_name = basename(input_file)
-  String index_name = input_name + output_suffix
+  String index_name = basename(input_file) + output_suffix
 
   command {
     ~{gatk_path} --java-options "-Xmx~{command_mem_gb}G ~{java_opt}" \
@@ -142,7 +141,7 @@ task IndexFile {
   }
 
   output {
-    File input_gvcf_copy = "~{input_name}" # To make this wf robust to DRS streaming issue without resolving URIs manually
+    File input_gvcf_copy = "~{input_file}" # To make this wf robust to DRS streaming issue without resolving URIs manually
     File output_index = "~{index_name}"
   }
 
