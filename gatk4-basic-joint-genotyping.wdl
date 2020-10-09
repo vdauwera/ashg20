@@ -48,7 +48,7 @@ workflow BasicJointGenotyping {
 
   scatter (input_gvcf in input_gvcfs) {
 
-    call IndexFile {
+    call RenameAndIndexFile {
       input: 
         input_file = input_gvcf,
         output_suffix = ".tbi",
@@ -103,7 +103,7 @@ workflow BasicJointGenotyping {
 }
 
 
-task IndexFile {
+task RenameAndIndexFile {
 
   input {
     File input_file
@@ -124,12 +124,17 @@ task IndexFile {
   Int machine_mem_gb = select_first([mem_gb, 7])
   Int command_mem_gb = machine_mem_gb - 1
 
-  String index_name = basename(input_file) + output_suffix
+  String new_name = basename(input_file)
+  String index_name = new_name + output_suffix
 
   command {
+    set -euo pipefail
+
+    mv ~{input_file} ~{new_name}
+
     ~{gatk_path} --java-options "-Xmx~{command_mem_gb}G ~{java_opt}" \
       IndexFeatureFile \
-      -I ~{input_file} \
+      -I ~{new_name} \
       -O ~{index_name}
   }
 
