@@ -63,8 +63,8 @@ workflow BasicJointGenotyping {
 
     call ImportGVCFs {
       input:
-        input_gvcfs = IndexFile.input_gvcf_copy,
-        input_gvcf_indices = IndexFile.output_index,
+        input_gvcfs = RenameAndIndexFile.input_gvcf_copy,
+        input_gvcf_indices = RenameAndIndexFile.output_index,
         workspace_dir_name = "genomicsdb",
         interval = interval,
         ref_fasta = ref_fasta,
@@ -101,7 +101,6 @@ workflow BasicJointGenotyping {
       docker = gatk_docker
   }
 }
-
 
 task RenameAndIndexFile {
 
