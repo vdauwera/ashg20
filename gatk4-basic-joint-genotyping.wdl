@@ -16,7 +16,7 @@ version 1.0
 ##   without any filtering applied after calling.
 ##
 ## Cromwell version support 
-## - Pending testing
+## - Successfully tested with 53.1 
 ##
 ## Runtime parameters may be optimized for Broad's Google Cloud Platform implementation. 
 ## For program versions, see docker containers. 
