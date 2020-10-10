@@ -267,6 +267,7 @@ task GenotypeGVCFs {
       -L ~{interval} \
       -O ~{output_vcf_filename} \
       -G StandardAnnotation -G AS_StandardAnnotation \
+      --allow-old-rms-mapping-quality-annotation-data \
       --merge-input-intervals
   >>>
 
