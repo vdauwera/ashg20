@@ -30,7 +30,7 @@ version 1.0
 
 # WORKFLOW DEFINITION 
 
-# Basic Joint Genotyping (not Best Practices, just demo)
+# Basic Joint Genotyping with GATK4 (not Best Practices, just demo)
 workflow BasicJointGenotyping {
 
   input {
@@ -107,6 +107,8 @@ workflow BasicJointGenotyping {
     File merged_vcf_index = MergeVCFs.output_vcf_index
   }
 }
+
+# TASK DEFINITIONS
 
 task RenameAndIndexFile {
 
