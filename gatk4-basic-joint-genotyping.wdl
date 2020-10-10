@@ -51,7 +51,8 @@ workflow BasicJointGenotyping {
     call RenameAndIndexFile {
       input: 
         input_file = input_gvcf,
-        output_suffix = ".tbi",
+        expected_suffix = ".g.vcf.gz",
+        index_suffix = ".tbi",
         gatk_path = gatk_path,
         docker = gatk_docker
     }
@@ -106,7 +107,8 @@ task RenameAndIndexFile {
 
   input {
     File input_file
-    String output_suffix
+    String expected_suffix
+    String index_suffix
 
     # Environment parameters
     String gatk_path
@@ -123,8 +125,11 @@ task RenameAndIndexFile {
   Int machine_mem_gb = select_first([mem_gb, 7])
   Int command_mem_gb = machine_mem_gb - 1
 
-  String new_name = basename(input_file)
-  String index_name = new_name + output_suffix
+  # Does the input file have the correct suffix? 
+  Boolean good_suffix = sub(basename(input_file), ".*\\.", "") == expected_suffix
+
+  String new_name = if good_suffix then basename(input_file) else basename(input_file) + expected_suffix
+  String index_name = new_name + index_suffix
 
   command {
     set -euo pipefail
@@ -145,7 +150,7 @@ task RenameAndIndexFile {
   }
 
   output {
-    File renamed_input = "~{new_name}" # To make this wf robust to DRS streaming issue without resolving URIs manually
+    File renamed_input = "~{new_name}"
     File output_index = "~{index_name}"
   }
 
