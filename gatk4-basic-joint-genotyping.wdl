@@ -101,6 +101,11 @@ workflow BasicJointGenotyping {
       gatk_path = gatk_path,
       docker = gatk_docker
   }
+
+  output {
+    File merged_vcf = MergeVCFs.output_vcf
+    File merged_vcf_index = MergeVCFs.output_vcf_index
+  }
 }
 
 task RenameAndIndexFile {
