@@ -5,10 +5,10 @@ version 1.0
 ## This WDL performs format validation on a VCF (incl. GVCF) file
 ##
 ## Requirements/expectations :
-## - One VCF file to validate (GVCF ok if providing the `-gvcf` flag)
+## - One VCF file to validate (GVCF ok with `-gvcf` flag set to true)
 ##
-## Outputs:
-## - Set of .txt files containing the validation reports, one per input file
+## Output:
+## - One text file containing the standard output from the validation command
 ##
 ## Cromwell version support 
 ## - Successfully tested with 53.1 
@@ -22,8 +22,6 @@ version 1.0
 ## be subject to different licenses. Users are responsible for checking that they are
 ## authorized to run all programs before running this script. See the respective containers
 ## for relevant information.
-
-# WORKFLOW DEFINITION 
 
 # WORKFLOW DEFINITION
 workflow BasicVariantValidation {
@@ -44,6 +42,9 @@ workflow BasicVariantValidation {
     input:
       input_vcf = input_vcf,
       input_vcf_index = input_vcf_index,
+      ref_fasta = ref_fasta,
+      ref_fasta_index =ref_fasta_index,
+      ref_dict = ref_dict,
       gatk_path = gatk_path,
       docker = gatk_docker
   }
@@ -93,15 +94,15 @@ task ValidateVariants {
       -V ~{input_vcf} \
       -gvcf ~{gvcf_mode} \
       --disable-sequence-dictionary-validation ~{skip_seq_dict} \
-      --do-not-validate-filtered-records ~{skip_filtered} \
-      -O ~{}
+      --do-not-validate-filtered-records ~{skip_filtered} 
   }
   runtime {
     docker: docker
     memory: machine_mem_gb + " GB"
-    disks: "local-disk " + disk_size + " HDD"
+    disks: "local-disk " + select_first([disk_space_gb, 100]) + if use_ssd then " SSD" else " HDD"
+    preemptible: select_first([preemptible_attempts, 3])
   }
   output {
-    File report = "${output_name}"
+    File report = stdout()
   }
 }
