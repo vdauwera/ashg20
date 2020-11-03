@@ -60,6 +60,7 @@ workflow BasicJointGenotyping {
 
   Array[String] calling_intervals = read_lines(interval_list)
 
+# ghjghglglkj
   scatter (interval in calling_intervals) {
 
     call ImportGVCFs {
